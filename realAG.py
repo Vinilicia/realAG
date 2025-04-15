@@ -79,9 +79,9 @@ def cruzamentoPorMedia(pais, pop, nPop, Pc, d):
         r = np.random.uniform(0, 1)
         if r < Pc:
             for j in range(d):
-                popIntermed[i][j] = (pais[i][j] + pais[i+1][j])/2
+                popIntermed[i][j] = (pais[i][0][j] + pais[i+1][0][j])/2
     for j in range(d):
-        popIntermed[nPop-1][j] = (pais[0][j] + pais[nPop-1][j])/2
+        popIntermed[nPop-1][j] = (pais[0][0][j] + pais[nPop-1][0][j])/2
     return popIntermed
 
 def mutacao(pop, nPop, Pm, d, xMin, xMax):
