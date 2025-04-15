@@ -91,17 +91,17 @@ def mutacao(pop, nPop, Pm, d, xMin, xMax):
             if r < Pm:
                 pop[i][j] = np.random.uniform(xMin, xMax)
 
-def elitismo(pop, popi, fit, ne):
-    elite_idx = sorted(range(len(fit)), key=lambda i: fit[i])[:ne]
-    elite = [pop[i] for i in elite_idx]
-    popi[:ne] = elite
+def elitismo(pop, popi, nPop, fit):
+    elite = min(fit)
+    elite = fit.index(elite)
+    r = np.random.randint(0, nPop)
+    popi[r] = pop[elite]
     return popi
 
 def genericAG(melhor):
     nPop = 100
     dimFunc = 2
     nGer = 100
-    nElite = 2
     xMin = -2
     xMax = 2
     pop = np.random.uniform(xMin, xMax, (nPop, dimFunc))
@@ -113,9 +113,9 @@ def genericAG(melhor):
         pais = selecionaPais(pop, nPop, fit)
         popIntermed = cruzamentoPorBLXab(pais, pop, nPop, Pc, dimFunc, xMin, xMax)
         mutacao(popIntermed, nPop, Pm, dimFunc, xMin, xMax)
-        elitismo(pop, popIntermed, fit, nElite)
+        elitismo(pop, popIntermed, nPop, fit)
         pop = popIntermed.copy()
-        #print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
+        print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
     return melhor
 
 melhor = 0
