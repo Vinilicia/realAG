@@ -84,12 +84,12 @@ def cruzamentoPorMedia(pais, pop, nPop, Pc, d):
         popIntermed[nPop-1][j] = (pais[0][j] + pais[nPop-1][j])/2
     return popIntermed
 
-def mutacao(pop, nPop, Pm, p, d):
+def mutacao(pop, nPop, Pm, d, xMin, xMax):
     for i in range(nPop):
         for j in range(d):
             r = np.random.uniform(0, 1)
             if r < Pm:
-                pop[i][j] = 1 - pop[i][j]
+                pop[i][j] = np.random.uniform(xMin, xMax)
 
 def elitismo(pop, popi, fit, ne):
     elite_idx = sorted(range(len(fit)), key=lambda i: fit[i])[:ne]
@@ -100,7 +100,6 @@ def elitismo(pop, popi, fit, ne):
 def genericAG(melhor):
     nPop = 100
     dimFunc = 2
-    precisao = 6
     nGer = 100
     nElite = 2
     xMin = -2
@@ -112,11 +111,11 @@ def genericAG(melhor):
     for i in range(nGer):
         fit, melhor = avaliaPopulacao(pop, nPop, dimFunc, melhor)
         pais = selecionaPais(pop, nPop, fit)
-        popIntermed = cruzamento(pais, pop, nPop, Pc, dimFunc)
-        mutacao(popIntermed, nPop, Pm, precisao, dimFunc)
+        popIntermed = cruzamentoPorBLXab(pais, pop, nPop, Pc, dimFunc, xMin, xMax)
+        mutacao(popIntermed, nPop, Pm, dimFunc, xMin, xMax)
         elitismo(pop, popIntermed, fit, nElite)
         pop = popIntermed.copy()
-        print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
+        #print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
     return melhor
 
 melhor = 0
