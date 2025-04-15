@@ -44,11 +44,11 @@ def cruzamentoPorBLXab(pais, pop, nPop, Pc, d, xMin, xMax):
             x = None
             y = None
             if funcaoObjetivo(pais[i], d) < funcaoObjetivo(pais[i+1], d):
-                x = pais[i]
-                y = pais[i+1]
+                x = pais[i][0]
+                y = pais[i+1][0]
             else:
-                x = pais[i+1]
-                y = pais[i]
+                x = pais[i+1][0]
+                y = pais[i][0]
             for j in range(d):
                 dist = abs(x[j]-y[j])
                 if(x[j] <= y[j]):
@@ -115,7 +115,7 @@ def genericAG(melhor):
         mutacao(popIntermed, nPop, Pm, dimFunc, xMin, xMax)
         elitismo(pop, popIntermed, nPop, fit)
         pop = popIntermed.copy()
-        print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
+        print(f"Geração {i+1} | Melhor fit = {melhor:.20f}")
     return melhor
 
 melhor = 0
