@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import random
 
 def funcaoObjetivo(indv, d):
     e = math.e
@@ -17,46 +18,78 @@ def avaliaPopulacao(pop, nPop, d, melhor):
             melhor = fit
     return fits, melhor
 
-def selecionaPais(nPop, fit):
+def selecionaPais(pop, nPop, fit):
     pais = []
-    pv = 0.9
+    invertFit = fit.copy()
     for i in range(nPop):
-        p1 = np.random.randint(0, nPop)
-        p2 = np.random.randint(0, nPop)
-        while p1 == p2:
-            p2 = np.random.randint(0, nPop)
-        r = np.random.uniform(0, 1)
-        if fit[p1] < fit[p2]:
-            if r > pv or (i > 0 and pais[i-1] == p1):
-                pais.append(p2)
-            else:
-                pais.append(p1)
-        else:
-            if r < pv or (i > 0 and pais[i-1] == p1):
-                pais.append(p2)
-            else:
-                pais.append(p1)
+        if invertFit[i] == 0:
+            invertFit[i] = 0.000001
+        invertFit[i] = 1/invertFit[i]
+    for i in range(0, nPop, 2):
+        p1 = random.choices(pop, weights=invertFit, k=1)
+        p2 = random.choices(pop, weights=invertFit, k=1)
+        while np.array_equal(p1, p2):
+            p2 = random.choices(pop, weights=invertFit, k=1)
+        pais.append(p1)
+        pais.append(p2)
     return pais
 
-def cruzamento(pais, pop, nPop, Pc, p, d):
+def cruzamentoPorBLXab(pais, pop, nPop, Pc, d, xMin, xMax):
     popIntermed = pop.copy()
-    for i in range(0,nPop,2):
+    alpha = 0.75
+    beta = 0.25
+    for i in range(0, nPop, 2):
         r = np.random.uniform(0, 1)
         if r < Pc:
-            r = np.random.randint(1, p)
+            x = None
+            y = None
+            if funcaoObjetivo(pais[i], d) < funcaoObjetivo(pais[i+1], d):
+                x = pais[i]
+                y = pais[i+1]
+            else:
+                x = pais[i+1]
+                y = pais[i]
             for j in range(d):
-                temp = popIntermed[pais[i]][j][:r].copy()
-                popIntermed[pais[i]][j][:r] = popIntermed[pais[i+1]][j][:r]
-                popIntermed[pais[i+1]][j][:r] = temp
+                dist = abs(x[j]-y[j])
+                if(x[j] <= y[j]):
+                    u1 = np.random.uniform(x[j]-alpha*dist, y[j]+beta*dist)
+                    if u1 < xMin: u1 = xMin
+                    elif u1 > xMax: u1 = xMax
+                    u2 = np.random.uniform(x[j]-alpha*dist, y[j]+beta*dist)
+                    if u2 < xMin: u2 = xMin
+                    elif u2 > xMax: u2 = xMax
+                    x[j] = u1
+                    y[j] = u2
+                else:
+                    u1 = np.random.uniform(y[j]-beta*dist, x[j]+alpha*dist)
+                    if u1 < xMin: u1 = xMin
+                    elif u1 > xMax: u1 = xMax
+                    u2 = np.random.uniform(y[j]-beta*dist, x[j]+alpha*dist)
+                    if u2 < xMin: u2 = xMin
+                    elif u2 > xMax: u2 = xMax
+                    x[j] = u1
+                    y[j] = u2
+            popIntermed[i] = x
+            popIntermed[i+1] = y
+    return popIntermed
+
+def cruzamentoPorMedia(pais, pop, nPop, Pc, d):
+    popIntermed = pop.copy()
+    for i in range(nPop-1):
+        r = np.random.uniform(0, 1)
+        if r < Pc:
+            for j in range(d):
+                popIntermed[i][j] = (pais[i][j] + pais[i+1][j])/2
+    for j in range(d):
+        popIntermed[nPop-1][j] = (pais[0][j] + pais[nPop-1][j])/2
     return popIntermed
 
 def mutacao(pop, nPop, Pm, p, d):
     for i in range(nPop):
         for j in range(d):
-            for k in range(p):
-                r = np.random.uniform(0, 1)
-                if r < Pm:
-                    pop[i][j][k] = 1 - pop[i][j][k]
+            r = np.random.uniform(0, 1)
+            if r < Pm:
+                pop[i][j] = 1 - pop[i][j]
 
 def elitismo(pop, popi, fit, ne):
     elite_idx = sorted(range(len(fit)), key=lambda i: fit[i])[:ne]
@@ -64,26 +97,28 @@ def elitismo(pop, popi, fit, ne):
     popi[:ne] = elite
     return popi
 
-def genericAG():
+def genericAG(melhor):
     nPop = 100
     dimFunc = 2
+    precisao = 6
     nGer = 100
     nElite = 2
-    xMin = -10
-    xMax = 10
+    xMin = -2
+    xMax = 2
     pop = np.random.uniform(xMin, xMax, (nPop, dimFunc))
     Pc = 1
     Pm = 0.1
     melhor = funcaoObjetivo(pop[0], dimFunc)
     for i in range(nGer):
         fit, melhor = avaliaPopulacao(pop, nPop, dimFunc, melhor)
-        pais = selecionaPais(nPop, fit)
-        popIntermed = cruzamento(pais, pop, nPop, Pc, precisao, dimFunc)
+        pais = selecionaPais(pop, nPop, fit)
+        popIntermed = cruzamento(pais, pop, nPop, Pc, dimFunc)
         mutacao(popIntermed, nPop, Pm, precisao, dimFunc)
         elitismo(pop, popIntermed, fit, nElite)
         pop = popIntermed.copy()
         print("Geracao " + str(i+1) + " Melhor fit = " + str(melhor))
     return melhor
 
-melhor = genericAG()
+melhor = 0
+melhor = genericAG(melhor)
 print(melhor)
