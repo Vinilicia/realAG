@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import csv
 import math
 import random
 
@@ -158,5 +159,10 @@ for pop in pops:
 
                         print(resultados[-1])
 
-tabela = pd.DataFrame(resultados)
-print(tabela)
+nome_arquivo = "resultados_ag.csv"
+cabecalhos = ["População", "Gerações", "Cruzamento", "TaxaCruz", "TaxaMut", "Elitismo", "Média", "Desvio", "Melhor"]
+with open(nome_arquivo, mode="w", newline="") as arquivo_csv:
+    writer = csv.DictWriter(arquivo_csv, fieldnames=cabecalhos)
+    writer.writeheader()
+    for resultado in resultados:
+        writer.writerow(resultado)
