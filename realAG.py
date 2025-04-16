@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import math
 import random
 
@@ -98,7 +99,7 @@ def elitismo(pop, popi, nPop, fit):
     popi[r] = pop[elite]
     return popi
 
-def genericAG(melhor):
+def realAG(nPop, nGer, cruzamento, Pc, Pm, elit):
     nPop = 100
     dimFunc = 2
     nGer = 100
@@ -111,13 +112,51 @@ def genericAG(melhor):
     for i in range(nGer):
         fit, melhor = avaliaPopulacao(pop, nPop, dimFunc, melhor)
         pais = selecionaPais(pop, nPop, fit)
-        popIntermed = cruzamentoPorBLXab(pais, pop, nPop, Pc, dimFunc, xMin, xMax)
+        if cruzamento == 0:
+            popIntermed = cruzamentoPorBLXab(pais, pop, nPop, Pc, dimFunc, xMin, xMax)
+        else:
+            popIntermed = cruzamentoPorMedia(pais, pop, nPop, Pc, dimFunc)
         mutacao(popIntermed, nPop, Pm, dimFunc, xMin, xMax)
-        elitismo(pop, popIntermed, nPop, fit)
+        if elit == 1:
+            elitismo(pop, popIntermed, nPop, fit)
         pop = popIntermed.copy()
-        print(f"Geração {i+1} | Melhor fit = {melhor:.20f}")
+        #print(f"Geração {i+1} | Melhor fit = {melhor:.20f}")
     return melhor
 
-melhor = 0
-melhor = genericAG(melhor)
-print(melhor)
+pops = [25, 50, 100]
+nGers = [25, 50, 100]
+cruzamento = [0, 1]
+taxasCruz = [0.6, 0.8, 1.0]
+taxasMut = [0.01, 0.05, 0.1]
+elits = [0, 1]
+resultados = []
+for pop in pops:
+    for nGer in nGers:
+        for cruz in cruzamento:
+            for taxaCruz in taxasCruz:
+                for taxaMut in taxasMut:
+                    for elit in elits:
+                        fits = []
+                        for i in range(20):
+                            fit = realAG(pop, nGer, cruzamento, taxaCruz, taxaMut, elit)
+                            fits.append(fit)
+                        media = np.mean(fits)
+                        desvio = np.std(fits)
+                        melhor = np.min(fits)
+
+                        resultados.append({
+                            "População": pop,
+                            "Gerações": nGer,
+                            "Cruzamento": cruz,
+                            "TaxaCruz": taxaCruz,
+                            "TaxaMut": taxaMut,
+                            "Elitismo": elit,
+                            "Média": media,
+                            "Desvio": desvio,
+                            "Melhor": melhor
+                        })
+
+                        print(resultados[-1])
+
+tabela = pd.DataFrame(resultados)
+print(tabela)
