@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import csv
 import math
 import random
 
@@ -28,10 +26,15 @@ def selecionaPais(pop, nPop, fit):
             invertFit[i] = 0.000001
         invertFit[i] = 1/invertFit[i]
     for i in range(0, nPop, 2):
-        p1 = random.choices(pop, weights=invertFit, k=1)
-        p2 = random.choices(pop, weights=invertFit, k=1)
+        p1 = random.choices(pop, weights=invertFit, k=1)[0]
+        p2 = random.choices(pop, weights=invertFit, k=1)[0]
+        max_tentativas = 30
+        tentativas = 0
         while np.array_equal(p1, p2):
-            p2 = random.choices(pop, weights=invertFit, k=1)
+            p2 = random.choices(pop, weights=invertFit, k=1)[0]
+            tentativas += 1
+            if tentativas == max_tentativas:
+                break
         pais.append(p1)
         pais.append(p2)
     return pais
@@ -46,11 +49,11 @@ def cruzamentoPorBLXab(pais, pop, nPop, Pc, d, xMin, xMax):
             x = None
             y = None
             if funcaoObjetivo(pais[i], d) < funcaoObjetivo(pais[i+1], d):
-                x = pais[i][0]
-                y = pais[i+1][0]
+                x = pais[i].copy()
+                y = pais[i+1].copy()
             else:
-                x = pais[i+1][0]
-                y = pais[i][0]
+                x = pais[i+1].copy()
+                y = pais[i].copy()
             for j in range(d):
                 dist = abs(x[j]-y[j])
                 if(x[j] <= y[j]):
@@ -81,9 +84,9 @@ def cruzamentoPorMedia(pais, pop, nPop, Pc, d):
         r = np.random.uniform(0, 1)
         if r < Pc:
             for j in range(d):
-                popIntermed[i][j] = (pais[i][0][j] + pais[i+1][0][j])/2
+                popIntermed[i][j] = (pais[i][j] + pais[i+1][j])/2
     for j in range(d):
-        popIntermed[nPop-1][j] = (pais[0][0][j] + pais[nPop-1][0][j])/2
+        popIntermed[nPop-1][j] = (pais[0][j] + pais[nPop-1][j])/2
     return popIntermed
 
 def mutacao(pop, nPop, Pm, d, xMin, xMax):
@@ -101,68 +104,23 @@ def elitismo(pop, popi, nPop, fit):
     return popi
 
 def realAG(nPop, nGer, cruzamento, Pc, Pm, elit):
-    nPop = 100
     dimFunc = 2
-    nGer = 100
     xMin = -2
     xMax = 2
     pop = np.random.uniform(xMin, xMax, (nPop, dimFunc))
-    Pc = 1
-    Pm = 0.1
     melhor = funcaoObjetivo(pop[0], dimFunc)
     for i in range(nGer):
         fit, melhor = avaliaPopulacao(pop, nPop, dimFunc, melhor)
         pais = selecionaPais(pop, nPop, fit)
-        if cruzamento == 0:
+        if cruzamento == 'BLXab':
             popIntermed = cruzamentoPorBLXab(pais, pop, nPop, Pc, dimFunc, xMin, xMax)
         else:
             popIntermed = cruzamentoPorMedia(pais, pop, nPop, Pc, dimFunc)
         mutacao(popIntermed, nPop, Pm, dimFunc, xMin, xMax)
-        if elit == 1:
+        if elit:
             elitismo(pop, popIntermed, nPop, fit)
         pop = popIntermed.copy()
-        #print(f"Geração {i+1} | Melhor fit = {melhor:.20f}")
     return melhor
 
-pops = [25, 50, 100]
-nGers = [25, 50, 100]
-cruzamento = [0, 1]
-taxasCruz = [0.6, 0.8, 1.0]
-taxasMut = [0.01, 0.05, 0.1]
-elits = [0, 1]
-resultados = []
-for pop in pops:
-    for nGer in nGers:
-        for cruz in cruzamento:
-            for taxaCruz in taxasCruz:
-                for taxaMut in taxasMut:
-                    for elit in elits:
-                        fits = []
-                        for i in range(20):
-                            fit = realAG(pop, nGer, cruzamento, taxaCruz, taxaMut, elit)
-                            fits.append(fit)
-                        media = np.mean(fits)
-                        desvio = np.std(fits)
-                        melhor = np.min(fits)
-
-                        resultados.append({
-                            "População": pop,
-                            "Gerações": nGer,
-                            "Cruzamento": cruz,
-                            "TaxaCruz": taxaCruz,
-                            "TaxaMut": taxaMut,
-                            "Elitismo": elit,
-                            "Média": media,
-                            "Desvio": desvio,
-                            "Melhor": melhor
-                        })
-
-                        print(resultados[-1])
-
-nome_arquivo = "resultados_ag.csv"
-cabecalhos = ["População", "Gerações", "Cruzamento", "TaxaCruz", "TaxaMut", "Elitismo", "Média", "Desvio", "Melhor"]
-with open(nome_arquivo, mode="w", newline="") as arquivo_csv:
-    writer = csv.DictWriter(arquivo_csv, fieldnames=cabecalhos)
-    writer.writeheader()
-    for resultado in resultados:
-        writer.writerow(resultado)
+melhor = realAG(60, 100, 'BLXab', 0.8, 0.1, True)
+print(melhor)
